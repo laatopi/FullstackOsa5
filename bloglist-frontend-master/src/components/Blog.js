@@ -1,13 +1,16 @@
 import React from 'react'
-import blogService from '../services/blogs'
+import { connect } from 'react-redux'
+import { blogDelete } from '../reducers/blogReducer'
+import { blogLike } from '../reducers/blogReducer'
+
 
 class Blog extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
       extraVisible: false,
-      user: this.props.user,
-      blog: this.props.blog
+      blog: this.props.blog,
+      owner: this.props.owner
     }
   }
 
@@ -16,30 +19,14 @@ class Blog extends React.Component {
   }
 
   like = async (event) => {
-
-    const blogObject = {
-      _id: this.state.blog._id,
-      title: this.state.blog.title,
-      author: this.state.blog.author,
-      url: this.state.blog.url,
-      likes: this.state.blog.likes + 1,
-      user: this.state.blog.user
-    }
-    await this.setState({ blog: blogObject })
-    blogService
-      .update(this.state.blog._id, blogObject)
-
-    this.props.setBlogs(blogObject)
+    this.props.blogLike({ ...this.props.blog, likes: this.props.blog.likes + 1 })
   }
 
   delete = async (event) => {
-
     event.preventDefault()
-
     if (window.confirm(`Delete '${this.state.blog.name}' by ${this.state.blog.author}`)) {
-      blogService
-        .deleteBlog(this.state.blog._id)
-        .then(this.props.filterBlogs(this.state.blog._id))
+      this.props.blogDelete(this.props.blog)
+
     }
   }
 
@@ -47,12 +34,11 @@ class Blog extends React.Component {
 
     let deleteButton
 
-    if (this.state.user === undefined) {
+    if (this.props.owner === undefined) {
       deleteButton = <button onClick={this.delete}>delete</button>
-    } else if (this.state.user._id === this.props.loggedUser.id) {
+    } else if (this.props.owner._id === this.props.user.id) {
       deleteButton = <button onClick={this.delete}>delete</button>
     }
-
 
     const blogStyle = {
       paddingTop: 10,
@@ -64,7 +50,7 @@ class Blog extends React.Component {
 
     const name = () => (
       <div>
-        {this.state.user === undefined ?
+        {this.props.owner === undefined ?
           '' :
           <p>added by {this.state.blog.user.name}</p>
         }
@@ -78,7 +64,7 @@ class Blog extends React.Component {
         <div className="name" onClick={this.click}>{this.props.blog.title} {this.props.blog.author}</div>
         <div style={showWhenVisible} className="details">
           <div>{this.props.blog.url}</div>
-          <div>{this.state.blog.likes} likes
+          <div>{this.props.blog.likes} likes
           <button onClick={this.like}>like</button></div>
           {name()}
           {deleteButton}
@@ -88,4 +74,13 @@ class Blog extends React.Component {
   }
 }
 
-export default Blog
+const mapStateToProps = (state) => {
+  return {
+    user: state.user.user
+  }
+}
+
+export default connect(
+  mapStateToProps,
+  { blogLike, blogDelete }
+)(Blog)

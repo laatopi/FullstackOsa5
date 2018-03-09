@@ -1,42 +1,61 @@
 import React from 'react'
-import PropTypes from 'prop-types'
+import blogService from '../services/blogs'
+import loginService from '../services/login'
+import { notificationSet } from '../reducers/notificationReducer'
+import { connect } from 'react-redux'
+import { userSet } from '../reducers/userReducer'
 
-const LoginForm = ({ handleSubmit, handleChange, username, password }) => {
-  return (
-    <div>
-      <h2>Kirjaudu</h2>
-      <form onSubmit={handleSubmit} className="loginform">
-        <div>
-          käyttäjätunnus
+class LoginForm extends React.Component {
+
+  login = async (event) => {
+    event.preventDefault()
+
+    try {
+      let user = await loginService.login({
+        username: event.target.username.value,
+        password: event.target.password.value
+      })
+      user = user.data
+
+      window.localStorage.setItem('loggedBlogappUser', JSON.stringify(user))
+
+      blogService.setToken(user.token)
+      this.props.userSet(user)
+      this.props.notificationSet(`Logged in succesfully!`, true)
+
+    } catch (exception) {
+      this.props.notificationSet(`Credentials wrong!`, false)
+    }
+  }
+
+  render() {
+    return (
+      <div>
+        <h2>Kirjaudu</h2>
+        <form onSubmit={this.login} className="loginform">
+          <div>
+            käyttäjätunnus
             <input
-            type="text"
-            name="username"
-            value={username}
-            onChange={handleChange}
-          />
-        </div>
-        <div>
-          salasana
+              type="text"
+              name="username"
+            />
+          </div>
+          <div>
+            salasana
             <input
-            type="password"
-            name="password"
-            value={password}
-            onChange={handleChange}
-          />
-        </div>
-        <button type="submit">kirjaudu</button>
-      </form>
-
-
-    </div>
-  )
+              type="password"
+              name="password"
+            />
+          </div>
+          <button type="submit">kirjaudu</button>
+        </form>
+      </div >
+    )
+  }
 }
 
-LoginForm.propTypes = {
-  handleSubmit: PropTypes.func.isRequired,
-  handleChange: PropTypes.func.isRequired,
-  username: PropTypes.string.isRequired,
-  password: PropTypes.string.isRequired
-}
 
-export default LoginForm
+export default connect(
+  null,
+  { notificationSet, blogService, loginService, userSet }
+)(LoginForm)

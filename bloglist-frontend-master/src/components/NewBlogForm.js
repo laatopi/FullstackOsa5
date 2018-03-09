@@ -1,14 +1,9 @@
 import React from 'react'
-import blogService from '../services/blogs'
-import Notification from './Notification'
-import PropTypes from 'prop-types'
-
-
+import { notificationSet } from '../reducers/notificationReducer'
+import { connect } from 'react-redux'
+import { blogCreation } from '../reducers/blogReducer'
 
 class NewBlogForm extends React.Component {
-  static propTypes = {
-    blogConcat: PropTypes.func.isRequired
-  }
   constructor(props) {
     super(props)
     this.state = {
@@ -23,34 +18,30 @@ class NewBlogForm extends React.Component {
     this.setState({ [event.target.name]: event.target.value })
   }
 
-  addBlog = (event) => {
+  addBlog = async (event) => {
     event.preventDefault()
-    const blogObject = {
-      title: this.state.title,
-      author: this.state.author,
-      url: this.state.url
-    }
 
-    blogService
-      .create(blogObject)
-      .then(newBlog => {
-        this.props.blogConcat(newBlog)
-        this.setState({
-          title: '',
-          author: '',
-          url: '',
-          message: `A new blog '${blogObject.title}' by ${blogObject.author} added`
-        })
-        setTimeout(() => {
-          this.setState({ message: null, })
-        }, 5000)
+    try {
+      const blogObject = {
+        title: this.state.title,
+        author: this.state.author,
+        url: this.state.url
+      }
+      this.setState({
+        title: '',
+        author: '',
+        url: '',
       })
+      this.props.blogCreation(blogObject)
+      this.props.notificationSet(`A new blog '${blogObject.title}' by ${blogObject.author} added`, true)
+    } catch (e) {
+      this.props.notificationSet(`Invalid blog, try filling all fields!`, false)
+    }
   }
 
   render() {
     return (
       <div>
-        <Notification message={this.state.message} />
         <h2> Create new blog </h2>
         <form onSubmit={this.addBlog}>
           <div>
@@ -87,4 +78,7 @@ class NewBlogForm extends React.Component {
   }
 }
 
-export default NewBlogForm;
+export default connect(
+  null,
+  { notificationSet, blogCreation }
+)(NewBlogForm)
